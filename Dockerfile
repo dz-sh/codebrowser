@@ -63,13 +63,8 @@ RUN apt-get update \
     && useradd --create-home --user-group --shell /usr/sbin/nologin codebrowser
 
 COPY --from=builder /opt/codebrowser /opt/codebrowser
-COPY docker/assets/indexstyle.override.css /tmp/indexstyle.override.css
 COPY src/codebrowser_control.py /usr/local/bin/codebrowser-control
 COPY LICENSE /opt/codebrowser/share/licenses/codebrowser-deployment/LICENSE
-
-RUN sed -i '$r /tmp/indexstyle.override.css' /opt/codebrowser/share/woboq/data/indexstyle.css \
-    && grep -Fq 'margin-left: 1ex' /opt/codebrowser/share/woboq/data/indexstyle.css \
-    && rm /tmp/indexstyle.override.css
 
 ENV CODEBROWSER_GENERATOR=/opt/codebrowser/bin/codebrowser_generator \
     CODEBROWSER_INDEXGENERATOR=/opt/codebrowser/bin/codebrowser_indexgenerator \

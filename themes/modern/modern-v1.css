@@ -1,0 +1,361 @@
+:root {
+    --cb-blue: #0077c8;
+    --cb-blue-dark: #005b99;
+    --cb-border: #d8dde2;
+    --cb-header: #f5f5f5;
+    --cb-muted: #68737d;
+    --cb-row: #f8fafb;
+    --cb-row-hover: #edf6fc;
+}
+
+html {
+    color-scheme: light;
+    background: #fff;
+}
+
+body,
+input,
+select {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+    color: #111820;
+    background: #fff;
+}
+
+a {
+    color: var(--cb-blue-dark);
+}
+
+a:visited {
+    color: #67568c;
+}
+
+div#header {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: 220px minmax(16rem, 1fr) auto;
+    grid-template-rows: 42px 33px;
+    box-sizing: border-box;
+    width: 100%;
+    height: 75px;
+    min-height: 75px;
+    overflow: hidden;
+    color: #17212b;
+    background: var(--cb-header);
+    border-bottom: 1px solid var(--cb-border);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 18%);
+}
+
+div#toprightlogo,
+a.logo {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    display: flex;
+    float: none;
+    align-items: center;
+    box-sizing: border-box;
+    width: 220px;
+    height: 75px;
+    margin: 0;
+    padding: 0 20px;
+    overflow: hidden;
+    color: #17212b;
+    background: none;
+    pointer-events: none;
+}
+
+div#toprightlogo::after,
+a.logo::after {
+    content: "Code Browser";
+    font-size: 21px;
+    font-weight: 650;
+    letter-spacing: -0.025em;
+    white-space: nowrap;
+}
+
+div#toprightlogo > a,
+a.logo > img {
+    display: none;
+}
+
+div#header > p {
+    grid-column: 2 / 4;
+    grid-row: 1;
+    display: flex;
+    align-items: end;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 8px 16px 2px 0;
+}
+
+div#header > input#searchline {
+    grid-column: 2 / 4;
+    grid-row: 1;
+    align-self: end;
+    margin: 0 16px 2px 0;
+}
+
+input#searchline {
+    box-sizing: border-box;
+    width: min(100%, 52rem);
+    max-width: none;
+    height: 31px;
+    margin: 0;
+    padding: 0 11px;
+    color: #17212b;
+    background: #fff;
+    border: 1px solid var(--cb-blue);
+    border-radius: 3px;
+    outline: none;
+}
+
+input#searchline:focus {
+    border-color: var(--cb-blue-dark);
+    box-shadow: 0 0 0 2px rgb(0 119 200 / 18%);
+}
+
+h1#title,
+h1#breadcrumb {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+    min-width: 0;
+    margin: 2px 12px 0 0;
+    padding: 0;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 24px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+h1#title a,
+h1#breadcrumb a {
+    color: var(--cb-blue-dark);
+}
+
+p#options {
+    grid-column: 3;
+    grid-row: 2;
+    align-self: start;
+    justify-self: end;
+    position: static;
+    margin: 2px 16px 0 8px;
+    color: var(--cb-muted);
+    font-size: 12px;
+    line-height: 24px;
+    white-space: nowrap;
+}
+
+p#options select {
+    color: #17212b;
+    background: #fff;
+    border: 1px solid #b8c1c9;
+    border-radius: 3px;
+}
+
+div#header + hr {
+    position: fixed;
+    top: 75px;
+    right: 0;
+    left: 0;
+    z-index: 19;
+    margin: 0;
+    background: var(--cb-border);
+}
+
+div#content {
+    margin-top: 75px;
+    padding-top: 5px;
+    background: #fff;
+}
+
+table#tree {
+    margin: 75px 0 0;
+    padding: 12px 16px;
+    color: #17212b;
+    border-spacing: 0;
+    font-size: 14px;
+    line-height: 22px;
+    text-align: left;
+}
+
+table#tree td {
+    height: 22px;
+    vertical-align: middle;
+}
+
+table#tree tr:nth-child(even) {
+    background: var(--cb-row);
+}
+
+table#tree tr:hover,
+table#tree tr:hover table {
+    background: var(--cb-row-hover);
+}
+
+table#tree td.folder > a,
+table#tree td.file > a,
+table#tree td.parent > a {
+    color: #174f78;
+}
+
+#whatisit {
+    position: absolute;
+    top: 86px;
+    right: 14px;
+    box-sizing: border-box;
+    width: 260px;
+    max-width: 260px;
+    margin: 0;
+    padding: 12px 14px;
+    color: var(--cb-muted);
+    background: #fbfcfd;
+    border: 1px solid #e1e6ea;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 18px;
+}
+
+#whatisit h3 {
+    margin: 0 0 6px;
+    color: #263746;
+    font-size: 14px;
+}
+
+table.code {
+    width: 100%;
+    color: #151a1f;
+    background: #fff;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    line-height: 17px;
+}
+
+.code th {
+    color: #74808b;
+    background: #f3f5f7;
+    border-right: 1px solid #e1e5e8;
+}
+
+.code td {
+    padding-left: 12px;
+}
+
+.code tr:hover > th,
+.code tr:hover > td {
+    background-color: var(--cb-row-hover);
+}
+
+.highlight,
+th.highlight + td {
+    background: #e6f2fa;
+}
+
+.highlight {
+    border-color: #9fc8e3;
+}
+
+#tooltip,
+.sideBox {
+    border-color: #cbd3da;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: 0 4px 18px rgb(28 45 58 / 18%);
+}
+
+#allSideBoxes {
+    top: 75px;
+}
+
+#footer {
+    margin: 22px 10px 10px;
+    color: var(--cb-muted);
+    font-size: 12px;
+    line-height: 18px;
+    text-align: right;
+}
+
+#footer img {
+    vertical-align: middle;
+}
+
+@media (max-width: 70rem) {
+    #whatisit {
+        position: static;
+        width: auto;
+        max-width: 34rem;
+        margin: 12px 16px;
+    }
+}
+
+@media (max-width: 56rem) {
+    div#header {
+        grid-template-columns: 180px minmax(12rem, 1fr);
+    }
+
+    div#toprightlogo,
+    a.logo {
+        width: 180px;
+        padding-left: 14px;
+    }
+
+    div#toprightlogo::after,
+    a.logo::after {
+        font-size: 18px;
+    }
+
+    div#header > p,
+    div#header > input#searchline,
+    h1#title,
+    h1#breadcrumb {
+        grid-column: 2;
+    }
+
+    p#options {
+        display: none;
+    }
+}
+
+@media (max-width: 36rem) {
+    div#header {
+        grid-template-columns: 1fr;
+    }
+
+    div#toprightlogo,
+    a.logo {
+        display: none;
+    }
+
+    div#header > p,
+    div#header > input#searchline,
+    h1#title,
+    h1#breadcrumb {
+        grid-column: 1;
+        margin-right: 10px;
+        margin-left: 10px;
+    }
+
+    div#header > p {
+        padding-right: 0;
+        padding-left: 0;
+    }
+
+    input#searchline {
+        width: 100%;
+    }
+
+    table#tree {
+        padding-right: 8px;
+        padding-left: 8px;
+    }
+
+    table.code {
+        font-size: 12px;
+    }
+}

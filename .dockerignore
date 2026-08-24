@@ -4,5 +4,6 @@
 config/repositories
 output
 tests
+themes
 *.md
 !README.md

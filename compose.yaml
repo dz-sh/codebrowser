@@ -43,4 +43,8 @@ services:
         source: ./docker/nginx.conf
         target: /etc/nginx/conf.d/default.conf
         read_only: true
+      - type: bind
+        source: ./themes/modern
+        target: /srv/codebrowser-theme
+        read_only: true
     restart: unless-stopped

@@ -5,7 +5,10 @@ on:
     paths:
       - Dockerfile
       - .dockerignore
+      - compose.yaml
       - docker/**
+      - themes/**
+      - tests/web/**
       - LICENSE
       - src/codebrowser_control.py
       - .github/workflows/image-test.yml
@@ -15,7 +18,10 @@ on:
     paths:
       - Dockerfile
       - .dockerignore
+      - compose.yaml
       - docker/**
+      - themes/**
+      - tests/web/**
       - LICENSE
       - src/codebrowser_control.py
       - .github/workflows/image-test.yml
@@ -37,3 +43,23 @@ jobs:
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Test optional web theme
+        run: |
+          docker run --detach --name codebrowser-web-test \
+            --publish 127.0.0.1:18080:80 \
+            --volume "$PWD/docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
+            --volume "$PWD/tests/web/public:/srv/codebrowser/public:ro" \
+            --volume "$PWD/themes/modern:/srv/codebrowser-theme:ro" \
+            nginx:1.30.4-alpine3.24
+          trap 'docker rm --force codebrowser-web-test' EXIT
+          for attempt in 1 2 3 4 5; do
+            curl --fail --silent http://127.0.0.1:18080/views/demo/ > /tmp/view.html && break
+            sleep 1
+          done
+          grep --fixed-strings '<link rel="stylesheet" href="data/indexstyle.css">' /tmp/view.html
+          grep --fixed-strings '<link rel="stylesheet" href="/theme/modern-v1.css">' /tmp/view.html
+          if curl --fail --silent http://127.0.0.1:18080/ | grep --quiet '/theme/modern-v1.css'; then
+            exit 1
+          fi
+          curl --fail --silent http://127.0.0.1:18080/theme/modern-v1.css \
+            | grep --quiet --fixed-strings -- '--cb-blue: #0077c8'
