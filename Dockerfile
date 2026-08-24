@@ -46,7 +46,7 @@ RUN apt-get update \
         python3 \
         python3-yaml \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd --create-home --uid 1000 --user-group --shell /usr/sbin/nologin codebrowser
+    && useradd --create-home --user-group --shell /usr/sbin/nologin codebrowser
 
 COPY --from=builder /opt/codebrowser /opt/codebrowser
 COPY src/codebrowser_control.py /usr/local/bin/codebrowser-control
