@@ -1,7 +1,7 @@
 FROM ubuntu:24.04 AS builder
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG CODEBROWSER_REF=ebe91a86e4d06a23f5f7709d081f83e2cc14ef26
+ARG CODEBROWSER_REF=02e30f8f05c347b5d3831d45da7efbc3059f3c74
 
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends \
