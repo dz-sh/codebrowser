@@ -6,6 +6,7 @@ ARG CODEBROWSER_REF=ebe91a86e4d06a23f5f7709d081f83e2cc14ef26
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends \
         ca-certificates \
+        clang-18 \
         cmake \
         g++ \
         git \
