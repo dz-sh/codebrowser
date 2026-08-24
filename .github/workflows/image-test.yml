@@ -57,11 +57,16 @@ jobs:
               http://127.0.0.1:18080/views/demo/ > /tmp/view.html && break
             sleep 1
           done
-          grep --ignore-case --fixed-strings 'Cache-Control: no-cache' /tmp/view.headers
+          if grep --ignore-case --fixed-strings 'Cache-Control: no-cache' /tmp/view.headers; then
+            exit 1
+          fi
+          grep --ignore-case --fixed-strings 'Last-Modified:' /tmp/view.headers
           grep --fixed-strings '<link rel="stylesheet" href="data/indexstyle.css">' /tmp/view.html
           grep --fixed-strings '<link rel="stylesheet" href="/theme/modern-v1.css">' /tmp/view.html
           if curl --fail --silent http://127.0.0.1:18080/ | grep --quiet '/theme/modern-v1.css'; then
             exit 1
           fi
-          curl --fail --silent http://127.0.0.1:18080/theme/modern-v1.css \
-            | grep --quiet --fixed-strings -- '--cb-blue: #0077c8'
+          curl --fail --silent --dump-header /tmp/theme.headers \
+            http://127.0.0.1:18080/theme/modern-v1.css > /tmp/theme.css
+          grep --ignore-case --fixed-strings 'Cache-Control: no-cache' /tmp/theme.headers
+          grep --quiet --fixed-strings -- '--cb-blue: #0077c8' /tmp/theme.css
