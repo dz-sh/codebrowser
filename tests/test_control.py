@@ -182,6 +182,19 @@ class ControlTest(unittest.TestCase):
         self.assertEqual(control.main(["reconcile"]), 0)
         self.assertEqual(target.stat().st_mtime_ns, generated_at)
 
+    def test_generator_failure_returns_nonzero_and_masks_view(self) -> None:
+        source, build = self.make_git_project()
+        self.generator.write_text("#!/bin/sh\nexit 23\n", encoding="utf-8")
+
+        self.assertEqual(
+            control.main(["register-build", "--source", str(source), "--build", str(build)]),
+            0,
+        )
+        self.assertEqual(control.main(["reconcile"]), 1)
+        public_link = self.output_root / "public/views/demo-debug"
+        self.assertFalse(public_link.exists())
+        self.assertFalse(public_link.is_symlink())
+
     def test_in_tree_build_uses_source_root(self) -> None:
         source = self.source_root / "in-tree"
         source.mkdir()

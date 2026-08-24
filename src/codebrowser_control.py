@@ -348,6 +348,7 @@ def command_reconcile(args: argparse.Namespace, settings: Settings) -> int:
     mask_unconfigured(public_views, configured)
 
     published: list[tuple[View, str]] = []
+    generator_failed = False
     for view in views:
         force = args.force_all or view.id in forced
         try:
@@ -364,6 +365,7 @@ def command_reconcile(args: argparse.Namespace, settings: Settings) -> int:
             print(f"MASK {view.id}: {exc}", file=sys.stderr)
             continue
         except subprocess.CalledProcessError as exc:
+            generator_failed = True
             mask_view(public_views, view.id)
             print(f"MASK {view.id}: generator exited with status {exc.returncode}", file=sys.stderr)
             continue
@@ -371,7 +373,7 @@ def command_reconcile(args: argparse.Namespace, settings: Settings) -> int:
 
     write_landing_page(settings.output_root / "public" / "index.html", published)
     print(f"published {len(published)} of {len(views)} configured view(s)")
-    return 0
+    return 1 if generator_failed else 0
 
 
 def reconcile_view(

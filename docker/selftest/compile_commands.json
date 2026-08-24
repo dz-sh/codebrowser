@@ -1,0 +1,7 @@
+[
+  {
+    "directory": "/tmp/codebrowser-selftest",
+    "file": "/tmp/codebrowser-selftest/kernel_doc.c",
+    "command": "clang -std=gnu11 -c -o /tmp/codebrowser-selftest/kernel_doc.o /tmp/codebrowser-selftest/kernel_doc.c"
+  }
+]

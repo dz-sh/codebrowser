@@ -5,6 +5,7 @@ on:
     paths:
       - Dockerfile
       - .dockerignore
+      - docker/**
       - LICENSE
       - src/codebrowser_control.py
       - .github/workflows/image-test.yml
@@ -14,6 +15,7 @@ on:
     paths:
       - Dockerfile
       - .dockerignore
+      - docker/**
       - LICENSE
       - src/codebrowser_control.py
       - .github/workflows/image-test.yml

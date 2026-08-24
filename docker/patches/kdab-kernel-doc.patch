@@ -1,0 +1,22 @@
+From: codebrowser deployment maintainers
+Subject: Reject colon-prefixed pseudo declaration references
+Upstream-base: 02e30f8f05c347b5d3831d45da7efbc3059f3c74
+Reason: Clang may recover a kernel-doc field such as @pfn as the Doxygen
+ declaration command @fn. Its remaining text starts with a colon and is not a
+ declaration. Looking up a trailing builtin name such as "free" after parsing
+ the translation unit can crash Clang Sema.
+Remove-when: KDAB validates declaration-command spelling or otherwise avoids
+ Sema builtin creation for these recovered kernel-doc fields.
+
+diff --git a/generator/commenthandler.cpp b/generator/commenthandler.cpp
+--- a/generator/commenthandler.cpp
++++ b/generator/commenthandler.cpp
+@@ -39,4 +39,7 @@ clang::NamedDecl *parseDeclarationReference(llvm::StringRef Text, clang::Sema &S
+                                             bool isFunction)
+ {
+-
++    Text = Text.trim();
++    if (Text.empty() || Text.starts_with(":"))
++        return nullptr;
++
+     clang::Preprocessor &PP = Sema.getPreprocessor();

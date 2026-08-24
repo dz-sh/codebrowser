@@ -20,6 +20,12 @@ RUN git init /src/codebrowser \
     && git -C /src/codebrowser fetch --depth 1 origin "${CODEBROWSER_REF}" \
     && git -C /src/codebrowser checkout --detach FETCH_HEAD
 
+COPY docker/patches/kdab-kernel-doc.patch /tmp/kdab-kernel-doc.patch
+COPY docker/selftest /tmp/codebrowser-selftest
+
+RUN git -C /src/codebrowser apply --check /tmp/kdab-kernel-doc.patch \
+    && git -C /src/codebrowser apply /tmp/kdab-kernel-doc.patch
+
 RUN cmake \
         -S /src/codebrowser \
         -B /src/codebrowser/build \
@@ -31,7 +37,14 @@ RUN cmake \
     && cmake --build /src/codebrowser/build \
     && cmake --install /src/codebrowser/build \
     && install -D -m 0644 /src/codebrowser/LICENSE /opt/codebrowser/share/licenses/KDAB-codebrowser/LICENSE \
-    && install -D -m 0644 /src/codebrowser/README.md /opt/codebrowser/share/licenses/KDAB-codebrowser/README.md
+    && install -D -m 0644 /src/codebrowser/README.md /opt/codebrowser/share/licenses/KDAB-codebrowser/README.md \
+    && mkdir -p /tmp/codebrowser-selftest-output \
+    && /opt/codebrowser/bin/codebrowser_generator \
+        -b /tmp/codebrowser-selftest \
+        -a \
+        -o /tmp/codebrowser-selftest-output \
+        -p selftest:/tmp/codebrowser-selftest:test \
+    && test -f /tmp/codebrowser-selftest-output/selftest/kernel_doc.c.html
 
 FROM ubuntu:24.04
 
