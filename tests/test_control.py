@@ -195,6 +195,30 @@ class ControlTest(unittest.TestCase):
         self.assertFalse(public_link.exists())
         self.assertFalse(public_link.is_symlink())
 
+    def test_reused_view_refreshes_static_assets_without_regeneration(self) -> None:
+        source, build = self.make_git_project()
+        self.assertEqual(
+            control.main(["register-build", "--source", str(source), "--build", str(build)]),
+            0,
+        )
+        self.assertEqual(control.main(["reconcile"]), 0)
+
+        revision = subprocess.check_output(
+            ["git", "-C", str(source), "rev-parse", "HEAD"], text=True
+        ).strip()
+        target = self.output_root / f"cache/demo-debug/{revision}"
+        generated = target / "browser/demo/index.html"
+        generated_at = generated.stat().st_mtime_ns
+
+        (self.data_dir / "codebrowser.css").write_text("body { color: navy; }", encoding="utf-8")
+        self.assertEqual(control.main(["reconcile"]), 0)
+
+        self.assertEqual(generated.stat().st_mtime_ns, generated_at)
+        self.assertEqual(
+            (target / "data/codebrowser.css").read_text(encoding="utf-8"),
+            "body { color: navy; }",
+        )
+
     def test_in_tree_build_uses_source_root(self) -> None:
         source = self.source_root / "in-tree"
         source.mkdir()

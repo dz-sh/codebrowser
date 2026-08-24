@@ -410,9 +410,16 @@ def reconcile_view(
         generate_view(view, revision, target, settings)
         print(f"GENERATE {view.id}@{revision[:12]}")
     else:
+        refresh_static_assets(settings.data_dir, target / "data")
         print(f"REUSE {view.id}@{revision[:12]}")
     publish_view(public_views, view.id, target)
     return revision
+
+
+def refresh_static_assets(source: Path, destination: Path) -> None:
+    if not source.is_dir():
+        raise ConfigError(f"Code Browser data directory is missing: {source}")
+    shutil.copytree(source, destination, dirs_exist_ok=True)
 
 
 def generate_view(view: View, revision: str, target: Path, settings: Settings) -> None:
