@@ -1,0 +1,51 @@
+#!/bin/sh
+set -eu
+
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+export CODEBROWSER_UID=${CODEBROWSER_UID:-$(id -u)}
+export CODEBROWSER_GID=${CODEBROWSER_GID:-$(id -g)}
+
+compose() {
+    docker compose --project-directory "$project_dir" -f "$project_dir/compose.yaml" "$@"
+}
+
+usage() {
+    cat <<'EOF'
+Usage:
+  ./codebrowser up
+  ./codebrowser register-build --source PATH [--build PATH] [--view ID]
+  ./codebrowser regenerate --force VIEW
+  ./codebrowser regenerate --force-all
+  ./codebrowser down
+
+The underlying Compose interface remains available directly:
+  docker compose up -d
+EOF
+}
+
+command=${1:-help}
+if [ "$#" -gt 0 ]; then
+    shift
+fi
+
+case "$command" in
+    up)
+        compose up -d "$@"
+        ;;
+    register-build)
+        compose run --rm generator register-build "$@"
+        ;;
+    regenerate)
+        compose run --rm generator reconcile "$@"
+        ;;
+    down)
+        compose down "$@"
+        ;;
+    help|-h|--help)
+        usage
+        ;;
+    *)
+        usage >&2
+        exit 2
+        ;;
+esac

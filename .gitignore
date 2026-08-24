@@ -1,0 +1,8 @@
+.env
+config/repositories/*
+!config/repositories/.gitkeep
+output/*
+!output/.gitkeep
+__pycache__/
+*.pyc
+.venv/

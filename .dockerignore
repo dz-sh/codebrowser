@@ -1,0 +1,8 @@
+.git
+.github
+.env
+config/repositories
+output
+tests
+*.md
+!README.md

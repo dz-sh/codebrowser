@@ -1,0 +1,46 @@
+name: codebrowser
+
+services:
+  generator:
+    image: ${CODEBROWSER_IMAGE:-ghcr.io/dz-sh/codebrowser:latest}
+    pull_policy: always
+    user: "${CODEBROWSER_UID:-1000}:${CODEBROWSER_GID:-1000}"
+    environment:
+      SOURCE_ROOT: ${SOURCE_ROOT:?set SOURCE_ROOT in .env}
+      BUILD_ROOT: ${BUILD_ROOT:?set BUILD_ROOT in .env}
+      CONFIG_ROOT: /config/repositories
+      OUTPUT_ROOT: /output
+    volumes:
+      - type: bind
+        source: ${SOURCE_ROOT:?set SOURCE_ROOT in .env}
+        target: ${SOURCE_ROOT:?set SOURCE_ROOT in .env}
+        read_only: true
+      - type: bind
+        source: ${BUILD_ROOT:?set BUILD_ROOT in .env}
+        target: ${BUILD_ROOT:?set BUILD_ROOT in .env}
+        read_only: true
+      - type: bind
+        source: ./config/repositories
+        target: /config/repositories
+      - type: bind
+        source: ./output
+        target: /output
+    restart: "no"
+
+  web:
+    image: nginx:1.30.4-alpine3.24
+    depends_on:
+      generator:
+        condition: service_completed_successfully
+    ports:
+      - "${CODEBROWSER_PORT:-8080}:80"
+    volumes:
+      - type: bind
+        source: ./output
+        target: /srv/codebrowser
+        read_only: true
+      - type: bind
+        source: ./docker/nginx.conf
+        target: /etc/nginx/conf.d/default.conf
+        read_only: true
+    restart: unless-stopped
