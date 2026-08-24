@@ -82,7 +82,7 @@ a.logo > img {
     display: none;
 }
 
-div#header > p {
+div#header > p:not(#options) {
     grid-column: 2 / 4;
     grid-row: 1;
     display: flex;
@@ -234,7 +234,7 @@ table.code {
     background: #fff;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-size: 13px;
-    line-height: 17px;
+    line-height: 15px;
 }
 
 .code th {
@@ -310,7 +310,7 @@ th.highlight + td {
         font-size: 18px;
     }
 
-    div#header > p,
+    div#header > p:not(#options),
     div#header > input#searchline,
     h1#title,
     h1#breadcrumb {
@@ -332,7 +332,7 @@ th.highlight + td {
         display: none;
     }
 
-    div#header > p,
+    div#header > p:not(#options),
     div#header > input#searchline,
     h1#title,
     h1#breadcrumb {
@@ -341,7 +341,7 @@ th.highlight + td {
         margin-left: 10px;
     }
 
-    div#header > p {
+    div#header > p:not(#options) {
         padding-right: 0;
         padding-left: 0;
     }
