@@ -300,6 +300,10 @@ th.highlight + td {
     box-shadow: none;
 }
 
+#allSideBoxes #historySideBox {
+    display: none;
+}
+
 #allSideBoxes .sideBox > h3 {
     flex: 0 0 auto;
     margin: 0 0 6px;
