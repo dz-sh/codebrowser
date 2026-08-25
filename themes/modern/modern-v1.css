@@ -256,6 +256,15 @@ table.code {
     opacity: 0.42;
 }
 
+.code .inlayHint {
+    color: #687786;
+    background: #f3f6f8;
+    border: 1px solid #d8e0e6;
+    border-radius: 3px;
+    padding: 0 2px;
+    font-size: 0.9em;
+}
+
 .highlight,
 th.highlight + td {
     background: #e6f2fa;
