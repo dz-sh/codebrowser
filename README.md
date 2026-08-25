@@ -4,6 +4,8 @@ Browse already-built C and C++ projects with [KDAB Code Browser](https://github.
 
 Your normal build stays unchanged. Code Browser reads the source tree, the build tree, and its `compile_commands.json`, then serves the generated index at `http://localhost:8080`. The same source tree can also be shared with OpenGrok.
 
+In compiled source files, branches excluded by the registered build's preprocessor configuration are dimmed. Headers remain unchanged because their active branches can vary by inclusion context.
+
 ## Before you start
 
 You need:

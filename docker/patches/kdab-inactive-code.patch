@@ -1,0 +1,56 @@
+From: codebrowser deployment maintainers
+Subject: Mark preprocessor-skipped ranges in main translation units
+Upstream-base: 02e30f8f05c347b5d3831d45da7efbc3059f3c74
+Reason: Static build-aware browsing should distinguish source excluded by the
+ active compilation command. Clang already reports each skipped range, but
+ KDAB Code Browser currently discards that information.
+Scope: Only the main translation unit is annotated. Included headers may be
+ parsed under different macro environments and must not imply one global state.
+Remove-when: KDAB emits an equivalent semantic marker for inactive regions.
+
+diff --git a/generator/preprocessorcallback.cpp b/generator/preprocessorcallback.cpp
+index e3e1a4c..d8fd975 100644
+--- a/generator/preprocessorcallback.cpp
++++ b/generator/preprocessorcallback.cpp
+@@ -349,3 +349,27 @@ void PreprocessorCallback::HandlePPCond(clang::SourceLocation Loc, clang::Source
+         "span", ("data-ppcond=\"" + clang::Twine(SM.getExpansionLineNumber(IfLoc)) + "\"").str(),
+         SM.getFileOffset(Loc), clang::Lexer::MeasureTokenLength(Loc, SM, PP.getLangOpts()));
+ }
++
++void PreprocessorCallback::SourceRangeSkipped(clang::SourceRange Range,
++                                              clang::SourceLocation EndifLoc)
++{
++    (void)EndifLoc;
++
++    clang::SourceLocation Begin = Range.getBegin();
++    clang::SourceLocation End = Range.getEnd();
++    if (!Begin.isValid() || !End.isValid() || !Begin.isFileID() || !End.isFileID())
++        return;
++
++    clang::SourceManager &SM = annotator.getSourceMgr();
++    clang::FileID FID = SM.getFileID(Begin);
++    if (FID != SM.getMainFileID() || SM.getFileID(End) != FID || !annotator.shouldProcess(FID))
++        return;
++
++    int StartOffset = SM.getFileOffset(Begin);
++    int EndOffset = SM.getFileOffset(End);
++    if (EndOffset <= StartOffset)
++        return;
++
++    annotator.generator(FID).addTag("span", "class=\"inactive-code\"", StartOffset,
++                                    EndOffset - StartOffset);
++}
+diff --git a/generator/preprocessorcallback.h b/generator/preprocessorcallback.h
+index 68be655..6ebfce1 100644
+--- a/generator/preprocessorcallback.h
++++ b/generator/preprocessorcallback.h
+@@ -104,6 +104,9 @@ public:
+         HandlePPCond(Loc, IfLoc);
+     }
+ 
++    void SourceRangeSkipped(clang::SourceRange Range,
++                            clang::SourceLocation EndifLoc) override;
++
+     virtual void Defined(const clang::Token &MacroNameTok, MyMacroDefinition MD,
+                          clang::SourceRange Range) override;
+ 

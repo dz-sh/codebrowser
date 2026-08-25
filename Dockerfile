@@ -21,10 +21,13 @@ RUN git init /src/codebrowser \
     && git -C /src/codebrowser checkout --detach FETCH_HEAD
 
 COPY docker/patches/kdab-kernel-doc.patch /tmp/kdab-kernel-doc.patch
+COPY docker/patches/kdab-inactive-code.patch /tmp/kdab-inactive-code.patch
 COPY docker/selftest /tmp/codebrowser-selftest
 
 RUN git -C /src/codebrowser apply --check /tmp/kdab-kernel-doc.patch \
-    && git -C /src/codebrowser apply /tmp/kdab-kernel-doc.patch
+    && git -C /src/codebrowser apply /tmp/kdab-kernel-doc.patch \
+    && git -C /src/codebrowser apply --check /tmp/kdab-inactive-code.patch \
+    && git -C /src/codebrowser apply /tmp/kdab-inactive-code.patch
 
 RUN cmake \
         -S /src/codebrowser \
@@ -44,7 +47,16 @@ RUN cmake \
         -a \
         -o /tmp/codebrowser-selftest-output \
         -p selftest:/tmp/codebrowser-selftest:test \
-    && test -f /tmp/codebrowser-selftest-output/selftest/kernel_doc.c.html
+    && test -f /tmp/codebrowser-selftest-output/selftest/kernel_doc.c.html \
+    && test -f /tmp/codebrowser-selftest-output/selftest/conditional_header.h.html \
+    && grep -F 'SELFTEST_INACTIVE_SENTINEL' \
+        /tmp/codebrowser-selftest-output/selftest/kernel_doc.c.html \
+        | grep -F 'class="inactive-code"' \
+    && grep -F 'SELFTEST_ACTIVE_SENTINEL' \
+        /tmp/codebrowser-selftest-output/selftest/kernel_doc.c.html \
+        | grep -vF 'class="inactive-code"' \
+    && ! grep -F 'class="inactive-code"' \
+        /tmp/codebrowser-selftest-output/selftest/conditional_header.h.html
 
 FROM ubuntu:24.04
 

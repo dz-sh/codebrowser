@@ -252,6 +252,10 @@ table.code {
     background-color: var(--cb-row-hover);
 }
 
+.code .inactive-code {
+    opacity: 0.42;
+}
+
 .highlight,
 th.highlight + td {
     background: #e6f2fa;
