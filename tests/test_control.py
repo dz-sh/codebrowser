@@ -230,11 +230,34 @@ class ControlTest(unittest.TestCase):
         (source / "main.c").write_text("int value;\n", encoding="utf-8")
         self.write_compdb(source, source)
 
-        self.assertEqual(control.main(["register-build", "--source", str(source)]), 0)
+        self.assertEqual(control.main(["register-build", "--source", "in-tree"]), 0)
         document = control.read_yaml(self.config_root / "in-tree/codebrowser.yaml")
         self.assertEqual(document["views"]["in-tree"]["build"], {"root": "source", "path": "."})
         self.assertEqual(control.main(["reconcile"]), 0)
         self.assertTrue((self.output_root / "public/views/in-tree").is_symlink())
+
+    def test_relative_registration_uses_configured_roots(self) -> None:
+        source, build = self.make_git_project()
+
+        self.assertEqual(
+            control.main(
+                ["register-build", "--source", source.name, "--build", build.name]
+            ),
+            0,
+        )
+
+        document = control.read_yaml(self.config_root / "demo/codebrowser.yaml")
+        self.assertEqual(document["repository"]["source"], "demo")
+        self.assertEqual(
+            document["views"]["demo-debug"]["build"],
+            {"root": "build", "path": "demo-debug"},
+        )
+
+    def test_relative_registration_cannot_escape_configured_roots(self) -> None:
+        self.assertEqual(
+            control.main(["register-build", "--source", "../outside"]),
+            2,
+        )
 
     def test_compilation_database_cannot_cross_view_boundary(self) -> None:
         source, build = self.make_git_project()

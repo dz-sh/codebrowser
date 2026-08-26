@@ -47,16 +47,19 @@ For an out-of-tree build:
 
 ```bash
 ./codebrowser register-build \
-  --source /srv/workspace/source/my-project \
-  --build /srv/workspace/build/my-project-debug
+  --source my-project \
+  --build my-project-debug
 ```
 
 For an in-tree build, omit `--build`:
 
 ```bash
 ./codebrowser register-build \
-  --source /srv/workspace/source/my-project
+  --source my-project
 ```
+
+`--source` is relative to `SOURCE_ROOT`; `--build` is relative to `BUILD_ROOT`.
+The configured roots remain the only host paths users need to specify.
 
 Registration checks the compilation database and creates the repository configuration automatically. Run it only after the build has completed successfully.
 
@@ -81,16 +84,16 @@ Repeat `register-build` for every repository or build variant you want to browse
 
 ```bash
 ./codebrowser register-build \
-  --source /srv/workspace/source/linux \
-  --build /srv/workspace/build/linux-x86_64
+  --source linux \
+  --build linux-x86_64
 
 ./codebrowser register-build \
-  --source /srv/workspace/source/linux \
-  --build /srv/workspace/build/linux-arm64
+  --source linux \
+  --build linux-arm64
 
 ./codebrowser register-build \
-  --source /srv/workspace/source/qemu \
-  --build /srv/workspace/build/qemu-debug
+  --source qemu \
+  --build qemu-debug
 ```
 
 Each build variant gets its own index. Symbols are not combined across repositories or build variants.
@@ -120,8 +123,8 @@ Names are inferred from the source and build directory names. If two entries wou
 
 ```bash
 ./codebrowser register-build \
-  --source /srv/workspace/source/linux \
-  --build /srv/workspace/build/linux-x86_64 \
+  --source linux \
+  --build linux-x86_64 \
   --view linux-x86_64
 ```
 
@@ -157,8 +160,8 @@ python3 /srv/workspace/source/linux/scripts/clang-tools/gen_compile_commands.py 
   -o /srv/workspace/build/linux-x86_64/compile_commands.json
 
 ./codebrowser register-build \
-  --source /srv/workspace/source/linux \
-  --build /srv/workspace/build/linux-x86_64
+  --source linux \
+  --build linux-x86_64
 
 ./codebrowser up
 ```

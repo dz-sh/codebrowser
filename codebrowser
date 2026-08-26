@@ -13,7 +13,7 @@ usage() {
     cat <<'EOF'
 Usage:
   ./codebrowser up
-  ./codebrowser register-build --source PATH [--build PATH] [--view ID]
+  ./codebrowser register-build --source SOURCE [--build BUILD] [--view ID]
   ./codebrowser list
   ./codebrowser generate [VIEW] [--force]
   ./codebrowser down

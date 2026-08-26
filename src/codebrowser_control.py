@@ -102,6 +102,13 @@ def require_within(path: Path, root: Path, label: str) -> Path:
     return resolved
 
 
+def resolve_cli_path(value: str, root: Path, label: str) -> Path:
+    path = Path(value).expanduser()
+    if not path.is_absolute():
+        path = root / path
+    return require_within(path, root, label)
+
+
 def git_commit(source: Path) -> str | None:
     result = subprocess.run(
         ["git", "-c", f"safe.directory={source}", "-C", str(source), "rev-parse", "--verify", "HEAD"],
@@ -257,8 +264,15 @@ def load_views(settings: Settings) -> list[View]:
 
 
 def command_register_build(args: argparse.Namespace, settings: Settings) -> int:
-    source = require_within(Path(args.source), settings.source_root, "source")
-    build = Path(args.build or args.source).expanduser().resolve()
+    source = resolve_cli_path(args.source, settings.source_root, "source")
+    if args.build is None:
+        build = source
+    else:
+        build_path = Path(args.build).expanduser()
+        if build_path.is_absolute():
+            build = build_path.resolve()
+        else:
+            build = resolve_cli_path(args.build, settings.build_root, "build")
     if not source.is_dir():
         raise ConfigError(f"source directory does not exist: {source}")
     if not build.is_dir():
@@ -683,8 +697,12 @@ def build_parser() -> argparse.ArgumentParser:
     register = subparsers.add_parser(
         "register-build", help="record a successfully completed build as a per-repository YAML view"
     )
-    register.add_argument("--source", required=True, help="absolute repository source path")
-    register.add_argument("--build", help="absolute build path; defaults to --source")
+    register.add_argument(
+        "--source", required=True, help="repository path relative to SOURCE_ROOT"
+    )
+    register.add_argument(
+        "--build", help="build path relative to BUILD_ROOT; defaults to the source directory"
+    )
     register.add_argument("--compilation-database", help="path relative to the build directory")
     register.add_argument("--repository", help="repository id; defaults to the source directory name")
     register.add_argument("--view", help="view id; defaults to the build directory name")
