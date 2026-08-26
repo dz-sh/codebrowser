@@ -57,9 +57,7 @@ jobs:
               http://127.0.0.1:18080/views/demo/ > /tmp/view.html && break
             sleep 1
           done
-          if grep --ignore-case --fixed-strings 'Cache-Control: no-cache' /tmp/view.headers; then
-            exit 1
-          fi
+          grep --ignore-case --fixed-strings 'Cache-Control: no-cache' /tmp/view.headers
           grep --ignore-case --fixed-strings 'Last-Modified:' /tmp/view.headers
           grep --fixed-strings '<link rel="stylesheet" href="data/indexstyle.css">' /tmp/view.html
           grep --fixed-strings '<link rel="stylesheet" href="/theme/modern-v1.css">' /tmp/view.html
