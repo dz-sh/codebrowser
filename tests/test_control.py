@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import os
 import subprocess
@@ -46,6 +48,7 @@ class ControlTest(unittest.TestCase):
         (self.data_dir / "codebrowser.css").write_text("body {}", encoding="utf-8")
 
         self.generator = self.root / "fake-generator"
+        self.generator_log = self.root / "generator.log"
         self.indexgenerator = self.root / "fake-indexgenerator"
         self.generator.write_text(
             "#!/bin/sh\n"
@@ -55,6 +58,7 @@ class ControlTest(unittest.TestCase):
             "  if [ \"$1\" = -p ]; then shift; project=${1%%:*}; fi\n"
             "  shift\n"
             "done\n"
+            "printf '%s\\n' \"$project\" >> \"$CODEBROWSER_TEST_GENERATOR_LOG\"\n"
             "mkdir -p \"$out/$project\"\n"
             "printf '<html>project</html>\\n' > \"$out/$project/index.html\"\n",
             encoding="utf-8",
@@ -72,6 +76,7 @@ class ControlTest(unittest.TestCase):
                 "CODEBROWSER_GENERATOR": str(self.generator),
                 "CODEBROWSER_INDEXGENERATOR": str(self.indexgenerator),
                 "CODEBROWSER_DATA_DIR": str(self.data_dir),
+                "CODEBROWSER_TEST_GENERATOR_LOG": str(self.generator_log),
             }
         )
 
@@ -243,6 +248,130 @@ class ControlTest(unittest.TestCase):
         self.assertEqual(
             control.main(["register-build", "--source", str(source), "--build", str(build)]),
             2,
+        )
+
+    def test_generate_targets_one_view_and_list_reports_state(self) -> None:
+        source, x86_build = self.make_git_project()
+        arm64_build = self.build_root / "demo-arm64"
+        arm64_build.mkdir()
+        self.write_compdb(source, arm64_build)
+
+        self.assertEqual(
+            control.main(["register-build", "--source", str(source), "--build", str(x86_build)]),
+            0,
+        )
+        self.assertEqual(
+            control.main(["register-build", "--source", str(source), "--build", str(arm64_build)]),
+            0,
+        )
+        self.assertEqual(control.main(["generate", "demo-arm64"]), 0)
+
+        self.assertTrue((self.output_root / "public/views/demo-arm64").is_symlink())
+        self.assertFalse((self.output_root / "public/views/demo-debug").exists())
+        landing = (self.output_root / "public/index.html").read_text(encoding="utf-8")
+        self.assertIn("demo-arm64", landing)
+        self.assertNotIn("demo-debug", landing)
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            self.assertEqual(control.main(["list"]), 0)
+        listing = output.getvalue()
+        self.assertRegex(listing, r"demo-arm64\s+demo\s+\w+\s+published")
+        self.assertRegex(listing, r"demo-debug\s+demo\s+\w+\s+not-generated")
+
+    def test_list_without_views_prints_only_the_header(self) -> None:
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            self.assertEqual(control.main(["list"]), 0)
+        self.assertEqual(output.getvalue().splitlines(), ["VIEW  REPOSITORY  REVISION  STATE  BUILD"])
+
+    def test_generate_force_controls_cache_reuse(self) -> None:
+        source, build = self.make_git_project()
+        self.assertEqual(
+            control.main(["register-build", "--source", str(source), "--build", str(build)]),
+            0,
+        )
+
+        self.assertEqual(control.main(["generate", "demo-debug"]), 0)
+        self.assertEqual(len(self.generator_log.read_text(encoding="utf-8").splitlines()), 1)
+
+        self.assertEqual(control.main(["generate", "demo-debug"]), 0)
+        self.assertEqual(len(self.generator_log.read_text(encoding="utf-8").splitlines()), 1)
+
+        self.assertEqual(control.main(["generate", "demo-debug", "--force"]), 0)
+        self.assertEqual(len(self.generator_log.read_text(encoding="utf-8").splitlines()), 2)
+
+    def test_targeted_generate_masks_unselected_mismatch(self) -> None:
+        source, x86_build = self.make_git_project()
+        arm64_build = self.build_root / "demo-arm64"
+        arm64_build.mkdir()
+        self.write_compdb(source, arm64_build)
+
+        for build in (x86_build, arm64_build):
+            self.assertEqual(
+                control.main(["register-build", "--source", str(source), "--build", str(build)]),
+                0,
+            )
+        self.assertEqual(control.main(["generate"]), 0)
+
+        config_path = self.config_root / "demo/codebrowser.yaml"
+        document = control.read_yaml(config_path)
+        document["views"]["demo-debug"]["built_commit"] = "0" * 40
+        control.atomic_yaml(config_path, document)
+
+        self.assertEqual(control.main(["generate", "demo-arm64"]), 0)
+        self.assertFalse((self.output_root / "public/views/demo-debug").exists())
+        self.assertTrue((self.output_root / "public/views/demo-arm64").is_symlink())
+
+    def test_targeted_generate_reports_invalid_selected_view(self) -> None:
+        source, build = self.make_git_project()
+        self.assertEqual(
+            control.main(["register-build", "--source", str(source), "--build", str(build)]),
+            0,
+        )
+        (build / "compile_commands.json").unlink()
+
+        self.assertEqual(control.main(["generate", "demo-debug"]), 1)
+        self.assertEqual(control.main(["generate", "unknown"]), 2)
+
+    def test_force_does_not_bypass_source_build_mismatch(self) -> None:
+        source, build = self.make_git_project()
+        self.assertEqual(
+            control.main(["register-build", "--source", str(source), "--build", str(build)]),
+            0,
+        )
+        self.assertEqual(control.main(["generate", "demo-debug"]), 0)
+
+        (source / "main.c").write_text("int main(void) { return 2; }\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(source), "add", "main.c"], check=True)
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(source),
+                "-c",
+                "user.name=Test",
+                "-c",
+                "user.email=test@example.invalid",
+                "commit",
+                "-qm",
+                "advance source only",
+            ],
+            check=True,
+        )
+
+        self.assertEqual(control.main(["generate", "demo-debug", "--force"]), 1)
+        self.assertFalse((self.output_root / "public/views/demo-debug").exists())
+        self.assertEqual(
+            control.main(
+                [
+                    "generate",
+                    "demo-debug",
+                    "--force",
+                    "--allow-stale-build",
+                ]
+            ),
+            0,
         )
 
 

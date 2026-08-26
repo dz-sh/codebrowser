@@ -66,6 +66,9 @@ Registration checks the compilation database and creates the repository configur
 ./codebrowser up
 ```
 
+On startup, Code Browser checks every registered build, generates missing views, reuses current
+indexes, and hides any source/build mismatch before starting the web service.
+
 Open <http://localhost:8080>. To stop the service:
 
 ```bash
@@ -88,11 +91,30 @@ Repeat `register-build` for every repository or build variant you want to browse
 ./codebrowser register-build \
   --source /srv/workspace/source/qemu \
   --build /srv/workspace/build/qemu-debug
-
-./codebrowser up
 ```
 
 Each build variant gets its own index. Symbols are not combined across repositories or build variants.
+
+List the configured views and their current publication state:
+
+```bash
+./codebrowser list
+```
+
+Generate all newly registered views without restarting the running web service:
+
+```bash
+./codebrowser generate
+```
+
+Or generate only one named view:
+
+```bash
+./codebrowser generate linux-arm64
+```
+
+The running web service picks up generated views immediately. Run `./codebrowser up` only when
+starting or restoring the Compose deployment.
 
 Names are inferred from the source and build directory names. If two entries would have the same name, assign one explicitly:
 
@@ -107,12 +129,15 @@ Names are inferred from the source and build directory names. If two entries wou
 
 | Situation | What to do |
 | --- | --- |
-| The Git commit changed | Rebuild the project, run `register-build` again, then run `./codebrowser up`. |
-| Build options changed without a new commit | Register the completed build, then run `./codebrowser regenerate --force VIEW`. |
-| A non-Git source tree changed | Rebuild it, then run `./codebrowser regenerate --force VIEW`. |
-| Nothing changed | Run `./codebrowser up`; the existing index is reused. |
+| A new view was registered | Run `./codebrowser generate VIEW`. |
+| The Git commit changed | Rebuild the project, register the completed build again, then run `./codebrowser generate VIEW`. |
+| Build options changed without a new commit | Register the completed build, then run `./codebrowser generate VIEW --force`. |
+| A non-Git source tree changed | Rebuild it, then run `./codebrowser generate VIEW --force`. |
+| Nothing changed | No generation is needed. A later `up` reuses the existing index. |
 
 If a Git source tree moves to a new commit before its build is registered, its stale view is hidden instead of being regenerated with mismatched build files.
+
+`--force` only disables cache reuse. It does not bypass the source/build consistency check.
 
 ## Linux kernel example
 

@@ -14,8 +14,8 @@ usage() {
 Usage:
   ./codebrowser up
   ./codebrowser register-build --source PATH [--build PATH] [--view ID]
-  ./codebrowser regenerate --force VIEW
-  ./codebrowser regenerate --force-all
+  ./codebrowser list
+  ./codebrowser generate [VIEW] [--force]
   ./codebrowser down
 
 The underlying Compose interface remains available directly:
@@ -34,6 +34,12 @@ case "$command" in
         ;;
     register-build)
         compose run --rm generator register-build "$@"
+        ;;
+    list)
+        compose run --rm generator list "$@"
+        ;;
+    generate)
+        compose run --rm generator generate "$@"
         ;;
     regenerate)
         compose run --rm generator reconcile "$@"
