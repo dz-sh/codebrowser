@@ -72,4 +72,5 @@ jobs:
           grep --quiet --fixed-strings -- '--cb-blue: #0077c8' /tmp/theme.css
           grep --quiet --fixed-strings -- '.code .inactive-code' /tmp/theme.css
           grep --quiet --fixed-strings -- '.code .inlayHint' /tmp/theme.css
+          grep --quiet --fixed-strings -- '.search-status' /tmp/theme.css
           grep --quiet --fixed-strings -- '#allSideBoxes #historySideBox' /tmp/theme.css

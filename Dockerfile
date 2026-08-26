@@ -22,12 +22,15 @@ RUN git init /src/codebrowser \
 
 COPY docker/patches/kdab-kernel-doc.patch /tmp/kdab-kernel-doc.patch
 COPY docker/patches/kdab-inactive-code.patch /tmp/kdab-inactive-code.patch
+COPY docker/patches/kdab-self-hosted-search.patch /tmp/kdab-self-hosted-search.patch
 COPY docker/selftest /tmp/codebrowser-selftest
 
 RUN git -C /src/codebrowser apply --check /tmp/kdab-kernel-doc.patch \
     && git -C /src/codebrowser apply /tmp/kdab-kernel-doc.patch \
     && git -C /src/codebrowser apply --check /tmp/kdab-inactive-code.patch \
-    && git -C /src/codebrowser apply /tmp/kdab-inactive-code.patch
+    && git -C /src/codebrowser apply /tmp/kdab-inactive-code.patch \
+    && git -C /src/codebrowser apply --check /tmp/kdab-self-hosted-search.patch \
+    && git -C /src/codebrowser apply /tmp/kdab-self-hosted-search.patch
 
 RUN cmake \
         -S /src/codebrowser \
@@ -41,6 +44,12 @@ RUN cmake \
     && cmake --install /src/codebrowser/build \
     && install -D -m 0644 /src/codebrowser/LICENSE /opt/codebrowser/share/licenses/KDAB-codebrowser/LICENSE \
     && install -D -m 0644 /src/codebrowser/README.md /opt/codebrowser/share/licenses/KDAB-codebrowser/README.md \
+    && for asset in codebrowser.js indexscript.js symbol.html; do \
+        grep -F 'No local file or symbol found' "/opt/codebrowser/share/woboq/data/${asset}" \
+        || exit 1; \
+        ! grep -F 'google.com/search?sitesearch' "/opt/codebrowser/share/woboq/data/${asset}" \
+        || exit 1; \
+    done \
     && mkdir -p /tmp/codebrowser-selftest-output \
     && /opt/codebrowser/bin/codebrowser_generator \
         -b /tmp/codebrowser-selftest \

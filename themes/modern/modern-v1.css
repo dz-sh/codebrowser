@@ -118,6 +118,25 @@ input#searchline:focus {
     box-shadow: 0 0 0 2px rgb(0 119 200 / 18%);
 }
 
+.search-status {
+    position: fixed;
+    z-index: 40;
+    box-sizing: border-box;
+    padding: 7px 10px;
+    color: var(--cb-muted);
+    background: #fff;
+    border: 1px solid var(--cb-border);
+    border-radius: 3px;
+    box-shadow: 0 4px 14px rgb(0 0 0 / 14%);
+    font-size: 12px;
+    line-height: 18px;
+    pointer-events: none;
+}
+
+.search-status[hidden] {
+    display: none;
+}
+
 h1#title,
 h1#breadcrumb {
     grid-column: 2;

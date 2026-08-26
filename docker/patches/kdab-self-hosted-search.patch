@@ -1,0 +1,239 @@
+From: codebrowser deployment maintainers
+Subject: Keep unmatched searches inside self-hosted instances
+Upstream-base: 02e30f8f05c347b5d3831d45da7efbc3059f3c74
+Reason: KDAB sends an unmatched file or symbol query to Google site search.
+ That fallback is ineffective for private or unindexed deployments and silently
+ discloses the user's query and instance URL to a third party.
+Scope: Local file and symbol autocomplete is unchanged. Unmatched Enter presses
+ stay on the current page and show a small accessible status message.
+Remove-when: KDAB no longer enables an external search fallback by default.
+
+diff --git a/data/codebrowser.js b/data/codebrowser.js
+index 53c52d9..bae60ee 100644
+--- a/data/codebrowser.js
++++ b/data/codebrowser.js
+@@ -999,6 +999,22 @@ $(function () {
+     // Search Line
+     $("#header").prepend("<input id='searchline' type='text' placeholder='Search a file or function'/>");
+     var searchline = $("input#searchline");
++    var searchStatus = $("<div class='search-status' role='status' aria-live='polite' hidden></div>")
++        .appendTo(document.body);
++    var hideSearchStatus = function() {
++        searchStatus.prop("hidden", true);
++    };
++    var showSearchStatus = function() {
++        var rect = searchline[0].getBoundingClientRect();
++        var header = document.getElementById("header");
++        var top = header ? Math.max(rect.bottom + 6, header.getBoundingClientRect().bottom + 6)
++                         : rect.bottom + 6;
++        searchStatus.text("No local file or symbol found")
++            .css({ left: rect.left, top: top, width: rect.width })
++            .prop("hidden", false);
++    };
++    $(window).on("resize scroll", hideSearchStatus);
++    searchline.blur(function() { setTimeout(hideSearchStatus, 150); });
+     var searchTerms;
+     searchline.focus(function() {
+         if (searchTerms)
+@@ -1007,24 +1023,16 @@ $(function () {
+         var fileIndex = [];
+         var functionDict = {};
+ 
+-        // Do a google seatch of the text on the project.
+-        var text_search = function(text) {
+-            var location = "" + (window.location);
+-            var idx = location.indexOf(file);
+-            if (idx < 0)
+-                return;
+-            location = location.substring(0, idx);
+-            window.location = "http://google.com/search?sitesearch=" + encodeURIComponent(location) + "&q=" + encodeURIComponent(text);
+-        }
+-
+ //BEGIN  code duplicated in indexscript.js
+         // callback for jqueryui's autocomple activate
+         var activate = function(event,ui) {
+             var val = ui.item.value;
+             var type = searchTerms[val] && searchTerms[val].type;
+             if (type == "file") {
++                hideSearchStatus();
+                 window.location = root_path + '/' +  searchTerms[val].file + ".html";
+             } else if (type == "ref") {
++                hideSearchStatus();
+                 var ref = searchTerms[val].ref;
+ 
+                 var url = root_path + "/refs/" + replace_invalid_filename_chars(ref);
+@@ -1051,7 +1059,7 @@ $(function () {
+                     }
+                 });
+             } else {
+-                text_search(val);
++                showSearchStatus();
+             }
+         };
+ 
+@@ -1090,11 +1098,13 @@ $(function () {
+             var value = searchline.val();
+             if(e.which == 13) {
+                 activate({}, { item: { value: value } });
++                return false;
+             }
+         });
+ 
+         // When the content changes, fetch the list of function that starts with ...
+         searchline.on('input', function() {
++            hideSearchStatus();
+             var value = $(this).val();
+             var k = getFnNameKey(value);
+             if (k && !Object.prototype.hasOwnProperty.call(functionDict, k)) {
+diff --git a/data/indexscript.js b/data/indexscript.js
+index 2689986..ccf2bcd 100644
+--- a/data/indexscript.js
++++ b/data/indexscript.js
+@@ -47,18 +47,28 @@ $(function() {
+         return res * 256 + 256 - s1.length;
+     }
+ 
+-    // Google text search (different than codebrowser.js)
+-    var text_search = function(text) {
+-        var location = "" + (window.location);
+-        window.location = "http://google.com/search?sitesearch=" + encodeURIComponent(location) + "&q=" + encodeURIComponent(text);
+-    }
+-
+     var fileIndex = [];
+     var searchTerms = {}
+     var functionDict = {};
+     var file = path;
+ 
+     var searchline = $("input#searchline");
++    var searchStatus = $("<div class='search-status' role='status' aria-live='polite' hidden></div>")
++        .appendTo(document.body);
++    var hideSearchStatus = function() {
++        searchStatus.prop("hidden", true);
++    };
++    var showSearchStatus = function() {
++        var rect = searchline[0].getBoundingClientRect();
++        var header = document.getElementById("header");
++        var top = header ? Math.max(rect.bottom + 6, header.getBoundingClientRect().bottom + 6)
++                         : rect.bottom + 6;
++        searchStatus.text("No local file or symbol found")
++            .css({ left: rect.left, top: top, width: rect.width })
++            .prop("hidden", false);
++    };
++    $(window).on("resize scroll", hideSearchStatus);
++    searchline.blur(function() { setTimeout(hideSearchStatus, 150); });
+ 
+     //BEGIN  copied from codebrowser.js
+ 
+@@ -67,8 +77,10 @@ $(function() {
+             var val = ui.item.value;
+             var type = searchTerms[val] && searchTerms[val].type;
+             if (type == "file") {
++                hideSearchStatus();
+                 window.location = root_path + '/' +  searchTerms[val].file + ".html";
+             } else if (type == "ref") {
++                hideSearchStatus();
+                 var ref = searchTerms[val].ref;
+                 var url = root_path + "/refs/" +  replace_invalid_filename_chars(ref);
+                 $.get(url, function(data) {
+@@ -94,7 +106,7 @@ $(function() {
+                     }
+                 });
+             } else {
+-                text_search(val);
++                showSearchStatus();
+             }
+         };
+ 
+@@ -133,11 +145,13 @@ $(function() {
+             var value = searchline.val();
+             if(e.which == 13) {
+                 activate({}, { item: { value: value } });
++                return false;
+             }
+         });
+ 
+         // When the content changes, fetch the list of function that starts with ...
+         searchline.on('input', function() {
++            hideSearchStatus();
+             var value = $(this).val();
+             var k = getFnNameKey(value);
+             if (k && !Object.prototype.hasOwnProperty.call(functionDict, k)) {
+diff --git a/data/symbol.html b/data/symbol.html
+index 8a6c0fd..af0f755 100644
+--- a/data/symbol.html
++++ b/data/symbol.html
+@@ -420,6 +420,22 @@ function getParameterByName(name) {
+ //----------------- SEARCH LINE  (everything duplicated)
+ 
+     var searchline = $("input#searchline");
++    var searchStatus = $("<div class='search-status' role='status' aria-live='polite' hidden></div>")
++        .appendTo(document.body);
++    var hideSearchStatus = function() {
++        searchStatus.prop("hidden", true);
++    };
++    var showSearchStatus = function() {
++        var rect = searchline[0].getBoundingClientRect();
++        var header = document.getElementById("header");
++        var top = header ? Math.max(rect.bottom + 6, header.getBoundingClientRect().bottom + 6)
++                         : rect.bottom + 6;
++        searchStatus.text("No local file or symbol found")
++            .css({ left: rect.left, top: top, width: rect.width })
++            .prop("hidden", false);
++    };
++    $(window).on("resize scroll", hideSearchStatus);
++    searchline.blur(function() { setTimeout(hideSearchStatus, 150); });
+     var searchTerms;
+     searchline.focus(function() {
+         if (searchTerms)
+@@ -428,26 +444,16 @@ function getParameterByName(name) {
+         var fileIndex = [];
+         var functionDict = {};
+ 
+-        // Do a google seatch of the text on the project.
+-        var text_search = function(text) {
+-            /* ###
+-            var location = "" + (window.location);
+-            var idx = location.indexOf(file);
+-            if (idx < 0)
+-                return;
+-            location = location.substring(0, idx);
+-            window.location = "http://google.com/search?sitesearch=" + encodeURIComponent(location) + "&q=" + encodeURIComponent(text);
+-            */
+-        }
+-
+ //BEGIN  code duplicated in indexscript.js
+         // callback for jqueryui's autocomple activate
+         var activate = function(event,ui) {
+             var val = ui.item.value;
+             var type = searchTerms[val] && searchTerms[val].type;
+             if (type == "file") {
++                hideSearchStatus();
+                 window.location = root_path + '/' +  searchTerms[val].file + ".html";
+             } else if (type == "ref") {
++                hideSearchStatus();
+                 var ref = searchTerms[val].ref;
+                 var url = root_path + "/refs/" + replace_invalid_filename_chars(ref);
+                 $.get(url, function(data) {
+@@ -473,7 +479,7 @@ function getParameterByName(name) {
+                     }
+                 });
+             } else {
+-                text_search(val);
++                showSearchStatus();
+             }
+         };
+ 
+@@ -512,11 +518,13 @@ function getParameterByName(name) {
+             var value = searchline.val();
+             if(e.which == 13) {
+                 activate({}, { item: { value: value } });
++                return false;
+             }
+         });
+ 
+         // When the content changes, fetch the list of function that starts with ...
+         searchline.on('input', function() {
++            hideSearchStatus();
+             var value = $(this).val();
+             var k = getFnNameKey(value);
+             if (k && !Object.prototype.hasOwnProperty.call(functionDict, k)) {
